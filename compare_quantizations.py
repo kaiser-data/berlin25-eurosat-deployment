@@ -63,7 +63,27 @@ def evaluate_model(model, testloader, device, precision_name):
     model.to(device)
     model.eval()
 
-    loss, accuracy = test(model, testloader, device)
+    # Check if model is FP16 to handle data conversion
+    is_fp16 = next(model.parameters()).dtype == torch.float16
+
+    criterion = torch.nn.CrossEntropyLoss()
+    correct, loss = 0, 0.0
+
+    with torch.no_grad():
+        for batch in testloader:
+            images = batch["image"].to(device)
+            labels = batch["label"].to(device)
+
+            # Convert images to FP16 if model is FP16
+            if is_fp16:
+                images = images.half()
+
+            outputs = model(images)
+            loss += criterion(outputs, labels).item()
+            correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
+
+    accuracy = correct / len(testloader.dataset)
+    loss = loss / len(testloader)
 
     print(f"  Loss: {loss:.4f}")
     print(f"  Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)\n")
