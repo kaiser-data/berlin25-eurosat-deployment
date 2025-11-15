@@ -133,6 +133,11 @@ echo ""
 # Activate cluster's pre-configured environment
 source ../hackathon-venv/bin/activate
 
+# Install missing dependencies if needed
+echo "Checking dependencies..."
+pip install --quiet flwr-datasets[vision]>=0.5.0 datasets 2>/dev/null || echo "Dependencies already installed"
+echo ""
+
 # Print environment info
 echo "Python: $(which python)"
 echo "PyTorch version: $(python -c 'import torch; print(torch.__version__)')"
