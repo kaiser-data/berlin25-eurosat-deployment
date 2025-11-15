@@ -242,9 +242,10 @@ def main():
     print("3. INT8 (Dynamic Quantization)")
     print("="*60)
 
-    # Create and evaluate INT8
+    # Create and evaluate INT8 (must run on CPU - quantized ops not available on GPU)
     model_int8 = create_int8_model(model_fp32)
-    int8_metrics = evaluate_model(model_int8, testloader, device, "INT8")
+    print("Note: INT8 evaluation runs on CPU (quantized ops not available on GPU)")
+    int8_metrics = evaluate_model(model_int8, testloader, "cpu", "INT8")
     int8_path, int8_size = save_and_measure(model_int8, output_dir, "int8")
 
     accuracy_drop_int8 = (baseline_accuracy - int8_metrics["accuracy"]) * 100
