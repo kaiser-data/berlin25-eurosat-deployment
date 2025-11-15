@@ -117,7 +117,7 @@ cat > "$JOB_FILE" << 'EOF'
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
-#SBATCH --time=00:30:00
+#SBATCH --time=00:15:00
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu_qos
 
