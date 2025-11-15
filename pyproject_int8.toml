@@ -32,7 +32,7 @@ clientapp = "eurosat.client_app:app"
 # ⚙️ EDIT BEFORE EACH RUN
 [tool.flwr.app.config]
 num-server-rounds = 20     # ← INT8 (4x faster than FP32, fastest)
-time-limit-minutes = 10    # ← 10 minute time limit
+time-limit-minutes = 15    # ← 15 min hackathon limit (safety, shouldn't trigger)
 fraction-train = 1.0       # Use all 10 clients
 local-epochs = 2           # 2 epochs per round
 lr = 0.001                 # Learning rate
