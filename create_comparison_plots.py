@@ -35,9 +35,9 @@ def create_comparison_plots(results):
     """Create comprehensive comparison plots."""
 
     # Extract data
-    precisions = ['fp32', 'fp16', 'int8']
-    labels = ['FP32\n(Baseline)', 'FP16\n(Half)', 'INT8\n(Quantized)']
-    colors = ['#3498db', '#e74c3c', '#2ecc71']
+    precisions = ['fp32', 'fp16']
+    labels = ['FP32\n(32-bit Baseline)', 'FP16\n(16-bit Mixed Precision)']
+    colors = ['#3498db', '#e74c3c']
 
     accuracies = [results['precisions'][p]['accuracy_percent'] for p in precisions]
     sizes = [results['precisions'][p]['file_size_mb'] for p in precisions]
@@ -60,7 +60,7 @@ def create_comparison_plots(results):
 
     # Create figure with subplots
     fig = plt.figure(figsize=(16, 10))
-    fig.suptitle('Federated Learning Quantization Comparison\nEuroSAT Satellite Imagery Classification',
+    fig.suptitle('Federated Learning: FP32 vs FP16 Mixed Precision\nEuroSAT Satellite Imagery Classification',
                  fontsize=16, fontweight='bold')
 
     # 1. Accuracy vs Model Size (scatter)
