@@ -238,26 +238,9 @@ def main():
         "accuracy_drop_percent": accuracy_drop_fp16
     }
 
-    print("="*60)
-    print("3. INT8 (Dynamic Quantization)")
-    print("="*60)
-
-    # Create and evaluate INT8 (must run on CPU - quantized ops not available on GPU)
-    model_int8 = create_int8_model(model_fp32)
-    print("Note: INT8 evaluation runs on CPU (quantized ops not available on GPU)")
-    int8_metrics = evaluate_model(model_int8, testloader, "cpu", "INT8")
-    int8_path, int8_size = save_and_measure(model_int8, output_dir, "int8")
-
-    accuracy_drop_int8 = (baseline_accuracy - int8_metrics["accuracy"]) * 100
-    compression_int8 = fp32_size / int8_size if int8_size > 0 else 0
-
-    results["precisions"]["int8"] = {
-        **int8_metrics,
-        "model_path": int8_path,
-        "file_size_mb": int8_size,
-        "compression_ratio": compression_int8,
-        "accuracy_drop_percent": accuracy_drop_int8
-    }
+    # INT8 skipped - dynamic quantization only works on CPU (too slow for hackathon)
+    # Note: INT8 QAT incompatible with Flower ArrayRecord
+    # Note: INT8 PTQ requires CPU backend (quantized ops not available on GPU)
 
     # Summary
     print("="*60)
@@ -266,7 +249,7 @@ def main():
     print(f"\n{'Precision':<10} {'Accuracy':<12} {'Drop':<12} {'Size (MB)':<12} {'Compression':<12}")
     print("-" * 60)
 
-    for prec in ["fp32", "fp16", "int8"]:
+    for prec in ["fp32", "fp16"]:
         data = results["precisions"][prec]
         print(f"{prec.upper():<10} "
               f"{data['accuracy_percent']:>6.2f}%     "

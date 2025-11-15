@@ -5,9 +5,9 @@
 # ==========================================
 #
 # This script runs the complete comparison:
-# 1. Train FP32, FP16 (INT8 training incompatible with Flower)
-# 2. Quantize the best FP32 model with real PTQ (FP32 → FP16 → INT8)
-# 3. Generate comparison plots and cost analysis
+# 1. Train FP32, FP16 with equal rounds for fair comparison
+# 2. Compare FP32 vs FP16: accuracy, model size, compression
+# 3. Generate comparison plots and analysis
 #
 # Usage: ./run_comparison.sh
 
@@ -23,11 +23,10 @@ echo -e "${BLUE}║     🔬 Federated Learning Quantization Comparison         
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 1: Multi-Precision Training Comparison${NC}"
-echo -e "  Training with different precisions (15-min time limit):"
-echo -e "    • FP32:  2 rounds  (baseline) [TESTING - 5 for final]"
-echo -e "    • FP16:  2 rounds  (same rounds for fair comparison) [TESTING - 5 for final]"
-echo -e "    • INT8:  PTQ only (training incompatible with Flower)"
+echo -e "${YELLOW}Step 1: Precision Training Comparison${NC}"
+echo -e "  Training with equal rounds for fair comparison:"
+echo -e "    • FP32:  2 rounds  (32-bit baseline) [TESTING - 5 for final]"
+echo -e "    • FP16:  2 rounds  (16-bit mixed precision) [TESTING - 5 for final]"
 echo ""
 
 # Submit FP32 and FP16 jobs only
@@ -63,8 +62,8 @@ echo -e "${GREEN}✅ All training jobs completed!${NC}"
 echo ""
 
 # Find the latest FP32 model
-echo -e "${YELLOW}Step 2: Post-Training Quantization (PTQ)${NC}"
-echo -e "  This shows: Real compression with actual accuracy measurement"
+echo -e "${YELLOW}Step 2: Model Comparison (FP32 vs FP16)${NC}"
+echo -e "  Comparing accuracy, model size, and compression"
 echo ""
 
 FP32_MODEL=$(find outputs -name "final_model.pt" -path "*/fp32/*" | sort -r | head -1)
@@ -75,23 +74,23 @@ if [ -z "$FP32_MODEL" ]; then
 fi
 
 echo -e "${GREEN}→ Found FP32 model: $FP32_MODEL${NC}"
-echo -e "${GREEN}→ Submitting PTQ comparison job (GPU)...${NC}"
+echo -e "${GREEN}→ Submitting comparison job (GPU)...${NC}"
 echo ""
 
-# Submit PTQ as GPU job
-PTQ_JOB=$(./run_ptq.sh "$FP32_MODEL" | grep "Submitted batch job" | awk '{print $4}')
-echo -e "  PTQ Job ID: $PTQ_JOB"
+# Submit comparison as GPU job
+COMP_JOB=$(./run_ptq.sh "$FP32_MODEL" | grep "Submitted batch job" | awk '{print $4}')
+echo -e "  Comparison Job ID: $COMP_JOB"
 echo ""
 
-# Wait for PTQ job to complete
-echo -e "${BLUE}Waiting for PTQ job to complete...${NC}"
+# Wait for comparison job to complete
+echo -e "${BLUE}Waiting for comparison job to complete...${NC}"
 while true; do
-    RUNNING=$(squeue -u team11 | grep "$PTQ_JOB" | wc -l)
+    RUNNING=$(squeue -u team11 | grep "$COMP_JOB" | wc -l)
     if [ "$RUNNING" -eq 0 ]; then
-        echo -e "${GREEN}PTQ job completed!${NC}"
+        echo -e "${GREEN}Comparison job completed!${NC}"
         break
     fi
-    echo -e "${BLUE}[$(date +%H:%M:%S)] PTQ running...${NC}"
+    echo -e "${BLUE}[$(date +%H:%M:%S)] Comparison running...${NC}"
     sleep 10
 done
 
