@@ -75,7 +75,13 @@ def main(grid: Grid, context: Context) -> None:
     # Save final model to disk
     print(f"\nSaving final model to disk at {save_path}...")
     state_dict = result.arrays.to_torch_state_dict()
-    torch.save(state_dict, f"{save_path}/final_model.pt")
+    model_path = f"{save_path}/final_model.pt"
+    torch.save(state_dict, model_path)
+
+    print(f"Model saved: {model_path}")
+    print(f"\nTo compare quantizations, run:")
+    print(f"  python compare_quantizations.py {model_path}")
+    print()
 
 
 def get_global_evaluate_fn(start_time: float, time_limit_seconds: float = None):
