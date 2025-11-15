@@ -119,6 +119,7 @@ cat > "$JOB_FILE" << 'EOF'
 #SBATCH --mem=32G
 #SBATCH --time=00:30:00
 #SBATCH --partition=gpu
+#SBATCH --qos=gpu_qos
 
 # Print job info
 echo "=========================================="
