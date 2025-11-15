@@ -95,11 +95,8 @@ def train(net, trainloader, epochs, lr, device, precision="fp32"):
     use_amp = precision == "fp16"
     scaler = torch.cuda.amp.GradScaler() if use_amp else None
 
-    # INT8 quantization-aware training setup
-    if precision == "int8":
-        # Configure for quantization-aware training
-        net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
-        torch.quantization.prepare_qat(net, inplace=True)
+    # Note: INT8 QAT not supported - incompatible with Flower ArrayRecord
+    # INT8 quantization only available via PTQ (compare_quantizations.py)
 
     running_loss = 0.0
     for _ in range(epochs):
@@ -118,17 +115,13 @@ def train(net, trainloader, epochs, lr, device, precision="fp32"):
                 scaler.step(optimizer)
                 scaler.update()
             else:
-                # FP32 or INT8 QAT forward pass
+                # FP32 forward pass (or INT8 config, which trains as FP32)
                 outputs = net(images)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
 
             running_loss += loss.item()
-
-    # Convert QAT model to quantized model after training
-    if precision == "int8":
-        torch.quantization.convert(net, inplace=True)
 
     avg_trainloss = running_loss / len(trainloader)
     return avg_trainloss
