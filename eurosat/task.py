@@ -7,7 +7,8 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets import load_dataset
+from flwr_datasets import FederatedDataset
+from flwr_datasets.partitioner import IidPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
 
@@ -43,49 +44,34 @@ class Net(nn.Module):
         return self.fc3(x)
 
 
-eurosat_train = None  # Cache dataset
+fds = None  # Cache FederatedDataset
 
 pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 
 def apply_transforms(batch):
-    """Apply transforms to the partition."""
+    """Apply transforms to the partition from FederatedDataset."""
     batch["image"] = [pytorch_transforms(img) for img in batch["image"]]
     return batch
 
 
 def load_data(partition_id: int, num_partitions: int):
-    """Load partition EuroSAT data using IID partitioning."""
-    global eurosat_train
-
-    # Load dataset once
-    if eurosat_train is None:
-        eurosat_train = load_dataset("tanganke/eurosat", split="train")
-
-    # Simple IID partitioning: divide dataset into equal chunks
-    total_samples = len(eurosat_train)
-    samples_per_partition = total_samples // num_partitions
-    start_idx = partition_id * samples_per_partition
-
-    # Last partition gets remaining samples
-    if partition_id == num_partitions - 1:
-        end_idx = total_samples
-    else:
-        end_idx = start_idx + samples_per_partition
-
-    # Get partition slice
-    partition = eurosat_train.select(range(start_idx, end_idx))
-
-    # Split partition: 80% train, 20% test
+    """Load partition EuroSAT data."""
+    # Only initialize `FederatedDataset` once
+    global fds
+    if fds is None:
+        partitioner = IidPartitioner(num_partitions=num_partitions)
+        fds = FederatedDataset(
+            dataset="tanganke/eurosat",
+            partitioners={"train": partitioner},
+        )
+    partition = fds.load_partition(partition_id)
+    # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
-
-    # Apply transforms
+    # Construct dataloaders
     partition_train_test = partition_train_test.with_transform(apply_transforms)
-
-    # Create dataloaders
     trainloader = DataLoader(partition_train_test["train"], batch_size=32, shuffle=True)
     testloader = DataLoader(partition_train_test["test"], batch_size=32)
-
     return trainloader, testloader
 
 
