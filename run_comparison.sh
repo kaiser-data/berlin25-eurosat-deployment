@@ -95,12 +95,12 @@ while true; do
 done
 
 echo ""
-echo -e "${YELLOW}Step 3: Generating comparison plots${NC}"
+echo -e "${YELLOW}Step 3: Generating presentation plot${NC}"
 echo ""
 
 # Activate venv for plot generation (runs on login node, no GPU needed)
 source ~/hackathon-venv-flwr-datasets/bin/activate
-python create_comparison_plots.py
+python create_presentation_plot.py
 
 echo ""
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
@@ -108,7 +108,7 @@ echo -e "${BLUE}║          ✅ Comparison Complete!                          �
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${GREEN}Results:${NC}"
-echo -e "  📊 Training comparison: Check logs/fl-*-r100-t10m-*.out"
-echo -e "  📊 PTQ comparison: Check outputs/.../quantization_comparison.json"
-echo -e "  📈 Plots: Check outputs/.../comparison_plots.png"
+echo -e "  📊 Training logs: logs/fl-*.out"
+echo -e "  📊 Comparison data: outputs/.../quantization_comparison.json"
+echo -e "  📈 Presentation plot: outputs/.../presentation_plot.png"
 echo ""
