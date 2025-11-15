@@ -17,8 +17,11 @@ app = ServerApp()
 def main(grid: Grid, context: Context) -> None:
     """Main entry point for the ServerApp."""
 
-    # Create run directory
-    run_dir, save_path = create_run_dir()
+    # Read precision first to create proper directory
+    precision: str = context.run_config.get("precision", "fp32")
+
+    # Create run directory with precision
+    run_dir, save_path = create_run_dir(precision)
 
     print(f"\n{'='*60}")
     print(f"Starting Federated Learning Training")
@@ -30,6 +33,7 @@ def main(grid: Grid, context: Context) -> None:
     fraction_train: float = context.run_config["fraction-train"]
     num_rounds: int = context.run_config["num-server-rounds"]
     lr: float = context.run_config["lr"]
+    precision: str = context.run_config.get("precision", "fp32")
     time_limit_minutes: float = context.run_config.get("time-limit-minutes", None)
 
     # Initialize time tracking
