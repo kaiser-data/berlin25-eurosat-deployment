@@ -26,7 +26,7 @@ echo ""
 echo -e "${YELLOW}Step 1: Multi-Precision Training Comparison${NC}"
 echo -e "  Training with different precisions (15-min time limit):"
 echo -e "    • FP32:  2 rounds  (baseline) [TESTING - 5 for final]"
-echo -e "    • FP16:  4 rounds  (2x faster with mixed precision) [TESTING - 10 for final]"
+echo -e "    • FP16:  2 rounds  (same rounds for fair comparison) [TESTING - 5 for final]"
 echo -e "    • INT8:  PTQ only (training incompatible with Flower)"
 echo ""
 
