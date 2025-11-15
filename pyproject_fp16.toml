@@ -1,0 +1,48 @@
+# =====================================================================
+# 16-BIT (FP16) Configuration - Half Precision
+# =====================================================================
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "berlin25-eurosat"
+version = "1.0.0"
+description = "FP16 Half Precision Training"
+license = "Apache-2.0"
+# NOTE: All deps are pre-installed in cluster's hackathon-venv
+dependencies = [
+    "flwr[simulation]>=1.23.0",
+    "flwr-datasets[vision]>=0.5.0",
+    "torch",
+    "torchvision",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "hackathon"
+
+[tool.flwr.app.components]
+serverapp = "eurosat.server_app:app"
+clientapp = "eurosat.client_app:app"
+
+# ⚙️ EDIT BEFORE EACH RUN
+[tool.flwr.app.config]
+num-server-rounds = 5      # ← Max rounds (e.g., 3, 5, 10, 20)
+time-limit-minutes = 0     # ← Time limit in minutes (0 = no limit, e.g., 10, 15, 30)
+fraction-train = 1.0       # Use all 10 clients
+local-epochs = 2           # 2 epochs per round
+lr = 0.001                 # Learning rate
+precision = "fp16"         # 16-bit half precision
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 10
+
+[tool.flwr.federations.cluster-gpu]
+options.num-supernodes = 10
