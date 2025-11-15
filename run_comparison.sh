@@ -67,9 +67,6 @@ echo -e "${YELLOW}Step 2: Post-Training Quantization (PTQ)${NC}"
 echo -e "  This shows: Real compression with actual accuracy measurement"
 echo ""
 
-# Activate virtual environment
-source ~/hackathon-venv-flwr-datasets/bin/activate
-
 FP32_MODEL=$(find outputs -name "final_model.pt" -path "*/fp32/*" | sort -r | head -1)
 
 if [ -z "$FP32_MODEL" ]; then
@@ -78,15 +75,32 @@ if [ -z "$FP32_MODEL" ]; then
 fi
 
 echo -e "${GREEN}→ Found FP32 model: $FP32_MODEL${NC}"
-echo -e "${GREEN}→ Running quantization comparison...${NC}"
+echo -e "${GREEN}→ Submitting PTQ comparison job (GPU)...${NC}"
 echo ""
 
-python compare_quantizations.py "$FP32_MODEL"
+# Submit PTQ as GPU job
+PTQ_JOB=$(./run_ptq.sh "$FP32_MODEL" | grep "Submitted batch job" | awk '{print $4}')
+echo -e "  PTQ Job ID: $PTQ_JOB"
+echo ""
+
+# Wait for PTQ job to complete
+echo -e "${BLUE}Waiting for PTQ job to complete...${NC}"
+while true; do
+    RUNNING=$(squeue -u team11 | grep "$PTQ_JOB" | wc -l)
+    if [ "$RUNNING" -eq 0 ]; then
+        echo -e "${GREEN}PTQ job completed!${NC}"
+        break
+    fi
+    echo -e "${BLUE}[$(date +%H:%M:%S)] PTQ running...${NC}"
+    sleep 10
+done
 
 echo ""
 echo -e "${YELLOW}Step 3: Generating comparison plots${NC}"
 echo ""
 
+# Activate venv for plot generation (runs on login node, no GPU needed)
+source ~/hackathon-venv-flwr-datasets/bin/activate
 python create_comparison_plots.py
 
 echo ""
