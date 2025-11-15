@@ -114,9 +114,9 @@ cat > "$JOB_FILE" << 'EOF'
 #SBATCH --error=logs/%x-%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=6
 #SBATCH --gres=gpu:1
-#SBATCH --mem=32G
+#SBATCH --mem=120G
 #SBATCH --time=00:15:00
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu_qos
