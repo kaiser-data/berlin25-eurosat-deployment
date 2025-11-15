@@ -131,7 +131,7 @@ echo "=========================================="
 echo ""
 
 # Activate cluster's pre-configured environment with flwr-datasets
-source ../hackathon-venv-flwr-datasets/bin/activate
+source ~/hackathon-venv-flwr-datasets/bin/activate
 
 # Set MIOpen cache to writable directory (AMD GPU fix)
 export MIOPEN_USER_DB_PATH=$SLURM_SUBMIT_DIR/.miopen_cache
