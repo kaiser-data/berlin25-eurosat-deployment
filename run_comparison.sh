@@ -45,12 +45,22 @@ echo -e "  Job ID: $JOB_INT8"
 
 echo ""
 echo -e "${YELLOW}Waiting for jobs to complete...${NC}"
-echo -e "  Monitor with: ${BLUE}squeue -u \$USER${NC}"
+echo -e "  Monitor with: ${BLUE}squeue -u team11${NC}"
 echo ""
 
-# Wait for all jobs to finish
-while squeue -u $USER | grep -q "$JOB_FP32\|$JOB_FP16\|$JOB_INT8"; do
-    sleep 10
+# Wait for all jobs to finish with progress updates
+echo -e "${BLUE}Checking job status every 30 seconds...${NC}"
+while true; do
+    # Check if any of the jobs are still running
+    RUNNING=$(squeue -u team11 | grep -E "$JOB_FP32|$JOB_FP16|$JOB_INT8" | wc -l)
+
+    if [ "$RUNNING" -eq 0 ]; then
+        echo -e "${GREEN}All jobs completed!${NC}"
+        break
+    fi
+
+    echo -e "${BLUE}[$(date +%H:%M:%S)] Still running: $RUNNING/3 jobs${NC}"
+    sleep 30
 done
 
 echo -e "${GREEN}✅ All training jobs completed!${NC}"
