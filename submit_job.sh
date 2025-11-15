@@ -133,10 +133,16 @@ echo ""
 # Activate cluster's pre-configured environment
 source ../hackathon-venv/bin/activate
 
+# Set MIOpen cache to writable directory (AMD GPU fix)
+export MIOPEN_USER_DB_PATH=$SLURM_SUBMIT_DIR/.miopen_cache
+export MIOPEN_CUSTOM_CACHE_DIR=$SLURM_SUBMIT_DIR/.miopen_cache
+mkdir -p $MIOPEN_USER_DB_PATH
+
 # Print environment info
 echo "Python: $(which python)"
 echo "PyTorch version: $(python -c 'import torch; print(torch.__version__)')"
 echo "CUDA available: $(python -c 'import torch; print(torch.cuda.is_available())')"
+echo "MIOpen cache: $MIOPEN_USER_DB_PATH"
 echo ""
 
 # Run Flower
