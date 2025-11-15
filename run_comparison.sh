@@ -5,8 +5,8 @@
 # ==========================================
 #
 # This script runs the complete comparison:
-# 1. Train FP32, FP16, INT8 for 10 minutes each
-# 2. Quantize the best FP32 model with real PTQ
+# 1. Train FP32, FP16 (INT8 training incompatible with Flower)
+# 2. Quantize the best FP32 model with real PTQ (FP32 → FP16 → INT8)
 # 3. Generate comparison plots and cost analysis
 #
 # Usage: ./run_comparison.sh
@@ -24,13 +24,13 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 
 echo -e "${YELLOW}Step 1: Multi-Precision Training Comparison${NC}"
-echo -e "  Each precision trains with different rounds (15-min time limit):"
-echo -e "    • FP32:  2 rounds  (baseline, slowest) [TESTING - 5 for final]"
-echo -e "    • FP16:  4 rounds  (2x faster) [TESTING - 10 for final]"
-echo -e "    • INT8:  8 rounds  (4x faster) [TESTING - 20 for final]"
+echo -e "  Training with different precisions (15-min time limit):"
+echo -e "    • FP32:  2 rounds  (baseline) [TESTING - 5 for final]"
+echo -e "    • FP16:  4 rounds  (2x faster with mixed precision) [TESTING - 10 for final]"
+echo -e "    • INT8:  PTQ only (training incompatible with Flower)"
 echo ""
 
-# Submit all 3 jobs
+# Submit FP32 and FP16 jobs only
 echo -e "${GREEN}→ Submitting FP32 job (2 rounds)...${NC}"
 JOB_FP32=$(./submit_job.sh fp32 | grep "Submitted batch job" | awk '{print $4}')
 echo -e "  Job ID: $JOB_FP32"
@@ -38,10 +38,6 @@ echo -e "  Job ID: $JOB_FP32"
 echo -e "${GREEN}→ Submitting FP16 job (4 rounds)...${NC}"
 JOB_FP16=$(./submit_job.sh fp16 | grep "Submitted batch job" | awk '{print $4}')
 echo -e "  Job ID: $JOB_FP16"
-
-echo -e "${GREEN}→ Submitting INT8 job (8 rounds)...${NC}"
-JOB_INT8=$(./submit_job.sh int8 | grep "Submitted batch job" | awk '{print $4}')
-echo -e "  Job ID: $JOB_INT8"
 
 echo ""
 echo -e "${YELLOW}Waiting for jobs to complete...${NC}"
@@ -52,14 +48,14 @@ echo ""
 echo -e "${BLUE}Checking job status every 30 seconds...${NC}"
 while true; do
     # Check if any of the jobs are still running
-    RUNNING=$(squeue -u team11 | grep -E "$JOB_FP32|$JOB_FP16|$JOB_INT8" | wc -l)
+    RUNNING=$(squeue -u team11 | grep -E "$JOB_FP32|$JOB_FP16" | wc -l)
 
     if [ "$RUNNING" -eq 0 ]; then
         echo -e "${GREEN}All jobs completed!${NC}"
         break
     fi
 
-    echo -e "${BLUE}[$(date +%H:%M:%S)] Still running: $RUNNING/3 jobs${NC}"
+    echo -e "${BLUE}[$(date +%H:%M:%S)] Still running: $RUNNING/2 jobs${NC}"
     sleep 30
 done
 
