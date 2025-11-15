@@ -56,16 +56,17 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-# Start with original config
-cp "$CONFIG_FILE" pyproject.toml
+# Create precision-specific pyproject.toml for this job
+JOB_CONFIG="pyproject_${PRECISION}_job.toml"
+cp "$CONFIG_FILE" "$JOB_CONFIG"
 
 # Override rounds if specified
 if [ -n "$OVERRIDE_ROUNDS" ]; then
     echo -e "${YELLOW}⚠️  Overriding max rounds to: $OVERRIDE_ROUNDS${NC}"
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/num-server-rounds = .*/num-server-rounds = $OVERRIDE_ROUNDS/" pyproject.toml
+        sed -i '' "s/num-server-rounds = .*/num-server-rounds = $OVERRIDE_ROUNDS/" "$JOB_CONFIG"
     else
-        sed -i "s/num-server-rounds = .*/num-server-rounds = $OVERRIDE_ROUNDS/" pyproject.toml
+        sed -i "s/num-server-rounds = .*/num-server-rounds = $OVERRIDE_ROUNDS/" "$JOB_CONFIG"
     fi
 fi
 
@@ -73,15 +74,15 @@ fi
 if [ -n "$OVERRIDE_TIME_LIMIT" ]; then
     echo -e "${YELLOW}⏱️  Overriding time limit to: $OVERRIDE_TIME_LIMIT minutes${NC}"
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/time-limit-minutes = .*/time-limit-minutes = $OVERRIDE_TIME_LIMIT/" pyproject.toml
+        sed -i '' "s/time-limit-minutes = .*/time-limit-minutes = $OVERRIDE_TIME_LIMIT/" "$JOB_CONFIG"
     else
-        sed -i "s/time-limit-minutes = .*/time-limit-minutes = $OVERRIDE_TIME_LIMIT/" pyproject.toml
+        sed -i "s/time-limit-minutes = .*/time-limit-minutes = $OVERRIDE_TIME_LIMIT/" "$JOB_CONFIG"
     fi
 fi
 
 # Extract values for display
-ROUNDS=$(grep "num-server-rounds" pyproject.toml | sed 's/.*= //' | sed 's/ .*//')
-TIME_LIMIT=$(grep "time-limit-minutes" pyproject.toml | sed 's/.*= //' | sed 's/ .*//')
+ROUNDS=$(grep "num-server-rounds" "$JOB_CONFIG" | sed 's/.*= //' | sed 's/ .*//')
+TIME_LIMIT=$(grep "time-limit-minutes" "$JOB_CONFIG" | sed 's/.*= //' | sed 's/ .*//')
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║          🚀 Submitting Federated Learning Job             ║${NC}"
@@ -107,7 +108,7 @@ else
 fi
 JOB_FILE="${JOB_NAME}.slurm"
 
-cat > "$JOB_FILE" << 'EOF'
+cat > "$JOB_FILE" << EOF
 #!/bin/bash
 #SBATCH --job-name=fl-JOB_PRECISION
 #SBATCH --output=logs/%x-%j.out
@@ -123,10 +124,10 @@ cat > "$JOB_FILE" << 'EOF'
 
 # Print job info
 echo "=========================================="
-echo "Job: $SLURM_JOB_NAME"
-echo "Job ID: $SLURM_JOB_ID"
-echo "Node: $SLURM_NODELIST"
-echo "Started: $(date)"
+echo "Job: \$SLURM_JOB_NAME"
+echo "Job ID: \$SLURM_JOB_ID"
+echo "Node: \$SLURM_NODELIST"
+echo "Started: \$(date)"
 echo "=========================================="
 echo ""
 
@@ -134,35 +135,44 @@ echo ""
 source ~/hackathon-venv-flwr-datasets/bin/activate
 
 # Set MIOpen cache to writable directory (AMD GPU fix)
-export MIOPEN_USER_DB_PATH=$SLURM_SUBMIT_DIR/.miopen_cache
-export MIOPEN_CUSTOM_CACHE_DIR=$SLURM_SUBMIT_DIR/.miopen_cache
-mkdir -p $MIOPEN_USER_DB_PATH
+export MIOPEN_USER_DB_PATH=\$SLURM_SUBMIT_DIR/.miopen_cache
+export MIOPEN_CUSTOM_CACHE_DIR=\$SLURM_SUBMIT_DIR/.miopen_cache
+mkdir -p \$MIOPEN_USER_DB_PATH
 
 # Print environment info
-echo "Python: $(which python)"
-echo "PyTorch version: $(python -c 'import torch; print(torch.__version__)')"
-echo "CUDA available: $(python -c 'import torch; print(torch.cuda.is_available())')"
-echo "MIOpen cache: $MIOPEN_USER_DB_PATH"
+echo "Python: \$(which python)"
+echo "PyTorch version: \$(python -c 'import torch; print(torch.__version__)')"
+echo "CUDA available: \$(python -c 'import torch; print(torch.cuda.is_available())')"
+echo "MIOpen cache: \$MIOPEN_USER_DB_PATH"
 echo ""
 
-# Run Flower
-cd $SLURM_SUBMIT_DIR
-echo "Running Flower with configuration:"
-cat pyproject.toml | grep -A 6 "\[tool.flwr.app.config\]"
+# Run Flower with precision-specific config
+cd \$SLURM_SUBMIT_DIR
+echo "Using config: JOB_CONFIG_FILE"
+echo "Configuration:"
+cat JOB_CONFIG_FILE | grep -A 6 "\[tool.flwr.app.config\]"
 echo ""
+
+# Copy precision-specific config to pyproject.toml for this job
+cp JOB_CONFIG_FILE pyproject.toml
 
 flwr run . cluster-gpu
 
 echo ""
 echo "=========================================="
-echo "Job completed: $(date)"
+echo "Job completed: \$(date)"
 echo "Check outputs: ls -lh ~/berlin25-eurosat/outputs/"
 echo "=========================================="
 EOF
 
 # Replace placeholders
-sed -i.bak "s/JOB_PRECISION/$PRECISION/g" "$JOB_FILE"
-rm "${JOB_FILE}.bak" 2>/dev/null || true
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/JOB_PRECISION/$PRECISION/g" "$JOB_FILE"
+    sed -i '' "s|JOB_CONFIG_FILE|$JOB_CONFIG|g" "$JOB_FILE"
+else
+    sed -i "s/JOB_PRECISION/$PRECISION/g" "$JOB_FILE"
+    sed -i "s|JOB_CONFIG_FILE|$JOB_CONFIG|g" "$JOB_FILE"
+fi
 
 # Create logs directory
 mkdir -p logs
