@@ -23,23 +23,24 @@ echo -e "${BLUE}║     🔬 Federated Learning Quantization Comparison         
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-TIME_LIMIT=10  # minutes
-
-echo -e "${YELLOW}Step 1: Training with 10-minute time limit${NC}"
-echo -e "  This shows: How far does each precision get in 10 minutes?"
+echo -e "${YELLOW}Step 1: Multi-Precision Training Comparison${NC}"
+echo -e "  Each precision trains with different rounds (15-min time limit):"
+echo -e "    • FP32:  5 rounds  (baseline, slowest)"
+echo -e "    • FP16:  10 rounds (2x faster with mixed precision)"
+echo -e "    • INT8:  20 rounds (4x faster with quantization-aware training)"
 echo ""
 
 # Submit all 3 jobs
-echo -e "${GREEN}→ Submitting FP32 job...${NC}"
-JOB_FP32=$(./submit_job.sh fp32 100 $TIME_LIMIT | grep "Submitted batch job" | awk '{print $4}')
+echo -e "${GREEN}→ Submitting FP32 job (5 rounds)...${NC}"
+JOB_FP32=$(./submit_job.sh fp32 | grep "Submitted batch job" | awk '{print $4}')
 echo -e "  Job ID: $JOB_FP32"
 
-echo -e "${GREEN}→ Submitting FP16 job...${NC}"
-JOB_FP16=$(./submit_job.sh fp16 100 $TIME_LIMIT | grep "Submitted batch job" | awk '{print $4}')
+echo -e "${GREEN}→ Submitting FP16 job (10 rounds)...${NC}"
+JOB_FP16=$(./submit_job.sh fp16 | grep "Submitted batch job" | awk '{print $4}')
 echo -e "  Job ID: $JOB_FP16"
 
-echo -e "${GREEN}→ Submitting INT8 job...${NC}"
-JOB_INT8=$(./submit_job.sh int8 100 $TIME_LIMIT | grep "Submitted batch job" | awk '{print $4}')
+echo -e "${GREEN}→ Submitting INT8 job (20 rounds)...${NC}"
+JOB_INT8=$(./submit_job.sh int8 | grep "Submitted batch job" | awk '{print $4}')
 echo -e "  Job ID: $JOB_INT8"
 
 echo ""
