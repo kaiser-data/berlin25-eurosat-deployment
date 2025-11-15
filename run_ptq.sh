@@ -34,7 +34,7 @@ cat > ptq_job.slurm << EOF
 #SBATCH --cpus-per-task=6
 #SBATCH --gres=gpu:1
 #SBATCH --mem=120G
-#SBATCH --time=00:05:00
+#SBATCH --time=00:10:00
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu_qos
 
