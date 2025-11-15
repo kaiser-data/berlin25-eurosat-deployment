@@ -133,15 +133,27 @@ echo ""
 # Activate cluster's pre-configured environment
 source ../hackathon-venv/bin/activate
 
-# Install missing dependencies if needed
-echo "Checking dependencies..."
-pip install --quiet flwr-datasets[vision]>=0.5.0 datasets 2>/dev/null || echo "Dependencies already installed"
+# Install missing dependencies
+echo "Installing required dependencies..."
+pip install --user --upgrade flwr-datasets[vision]>=0.5.0 datasets
+if [ $? -eq 0 ]; then
+    echo "✓ Dependencies installed successfully"
+else
+    echo "⚠ Warning: pip install failed, trying to continue..."
+fi
 echo ""
 
 # Print environment info
 echo "Python: $(which python)"
 echo "PyTorch version: $(python -c 'import torch; print(torch.__version__)')"
 echo "CUDA available: $(python -c 'import torch; print(torch.cuda.is_available())')"
+
+# Verify flwr_datasets is available
+echo -n "Checking flwr_datasets: "
+python -c "import flwr_datasets; print('✓ OK')" 2>/dev/null || echo "✗ NOT FOUND - this will cause errors!"
+
+echo -n "Checking datasets: "
+python -c "import datasets; print('✓ OK')" 2>/dev/null || echo "✗ NOT FOUND - this will cause errors!"
 echo ""
 
 # Run Flower
