@@ -75,22 +75,61 @@ def load_data(partition_id: int, num_partitions: int):
     return trainloader, testloader
 
 
-def train(net, trainloader, epochs, lr, device):
-    """Train the model on the training set."""
-    net.to(device)  # move model to GPU if available
+def train(net, trainloader, epochs, lr, device, precision="fp32"):
+    """Train the model on the training set with specified precision.
+
+    Args:
+        net: Neural network model
+        trainloader: Training data loader
+        epochs: Number of training epochs
+        lr: Learning rate
+        device: Device to train on (cuda/cpu)
+        precision: Training precision - "fp32", "fp16", or "int8"
+    """
+    net.to(device)
     criterion = torch.nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
     net.train()
+
+    # FP16 mixed precision training
+    use_amp = precision == "fp16"
+    scaler = torch.cuda.amp.GradScaler() if use_amp else None
+
+    # INT8 quantization-aware training setup
+    if precision == "int8":
+        # Configure for quantization-aware training
+        net.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
+        torch.quantization.prepare_qat(net, inplace=True)
+
     running_loss = 0.0
     for _ in range(epochs):
         for batch in trainloader:
             images = batch["image"].to(device)
             labels = batch["label"].to(device)
             optimizer.zero_grad()
-            loss = criterion(net(images), labels)
-            loss.backward()
-            optimizer.step()
+
+            if use_amp:
+                # FP16 mixed precision forward pass
+                with torch.cuda.amp.autocast():
+                    outputs = net(images)
+                    loss = criterion(outputs, labels)
+                # FP16 backward pass with gradient scaling
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                # FP32 or INT8 QAT forward pass
+                outputs = net(images)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
             running_loss += loss.item()
+
+    # Convert QAT model to quantized model after training
+    if precision == "int8":
+        torch.quantization.convert(net, inplace=True)
+
     avg_trainloss = running_loss / len(trainloader)
     return avg_trainloss
 

@@ -27,13 +27,17 @@ def train(msg: Message, context: Context):
     num_partitions = context.node_config["num-partitions"]
     trainloader, _ = load_data(partition_id, num_partitions)
 
-    # Call the training function
+    # Get precision from run config
+    precision = context.run_config.get("precision", "fp32")
+
+    # Call the training function with precision
     train_loss = train_fn(
         model,
         trainloader,
         context.run_config["local-epochs"],
         msg.content["config"]["lr"],
         device,
+        precision,
     )
 
     # Construct and return reply Message
