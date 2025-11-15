@@ -130,7 +130,7 @@ echo "=========================================="
 echo ""
 
 # Activate cluster's pre-configured environment
-source /path/to/hackathon-venv/bin/activate
+source ../hackathon-venv/bin/activate
 
 # Print environment info
 echo "Python: $(which python)"
@@ -139,7 +139,7 @@ echo "CUDA available: $(python -c 'import torch; print(torch.cuda.is_available()
 echo ""
 
 # Run Flower
-cd ~/berlin25-eurosat
+cd $SLURM_SUBMIT_DIR
 echo "Running Flower with configuration:"
 cat pyproject.toml | grep -A 6 "\[tool.flwr.app.config\]"
 echo ""
