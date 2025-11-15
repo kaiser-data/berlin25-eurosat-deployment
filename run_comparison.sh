@@ -67,6 +67,9 @@ echo -e "${YELLOW}Step 2: Post-Training Quantization (PTQ)${NC}"
 echo -e "  This shows: Real compression with actual accuracy measurement"
 echo ""
 
+# Activate virtual environment
+source ~/hackathon-venv-flwr-datasets/bin/activate
+
 FP32_MODEL=$(find outputs -name "final_model.pt" -path "*/fp32/*" | sort -r | head -1)
 
 if [ -z "$FP32_MODEL" ]; then
